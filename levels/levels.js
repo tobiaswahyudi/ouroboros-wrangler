@@ -2,12 +2,14 @@ const level_idktesting = LevelState.make({
     id: "idktesting",
     title: "Snek's first meal",
     level: `
-..|Bl|Bl|..|..|..|..|..
-..|Bl|..|Hl|Sl|Sl|Sl|..
-..|Yu|..|..|..|..|Su|..
-..|..|..|Cr|..|..|Su|..
-..|Bl|..|..|Ap|..|..|..
-..|..|..|..|..|..|..|..
+Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl
+Bl|..|Bl|Bl|..|..|..|..|..|Bl
+Bl|..|Bl|..|..|..|Hl|Sl|..|Bl
+Bl|..|Yu|..|..|..|..|Su|..|Bl
+Bl|..|..|..|Cr|..|..|Su|..|Bl
+Bl|..|Bl|..|..|Ap|..|Su|..|Bl
+Bl|..|..|..|..|..|..|Su|..|Bl
+Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl
 `,
     bestMoves: 10,
 });

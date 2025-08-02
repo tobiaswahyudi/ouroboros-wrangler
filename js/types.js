@@ -71,6 +71,20 @@ const rotationFromRight = (direction) => {
   return 0;
 };
 
+const rotCw = (direction) => {
+  switch (direction) {
+    case Direction.UP:
+      return Direction.RIGHT;
+    case Direction.RIGHT:
+      return Direction.DOWN;
+    case Direction.DOWN:
+      return Direction.LEFT;
+    case Direction.LEFT:
+      return Direction.UP;
+  }
+  return direction;
+};
+
 const oppositeDirection = (direction) => {
   switch (direction) {
     case Direction.UP:
@@ -83,6 +97,10 @@ const oppositeDirection = (direction) => {
       return Direction.LEFT;
   }
   return direction;
+};
+
+const rotCcw = (direction) => {
+  return rotCw(oppositeDirection(direction));
 };
 
 const getDirVec = (direction) => {

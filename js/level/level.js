@@ -6,6 +6,10 @@ class LevelManager {
   constructor(game, levelState) {
     this.game = game;
     this.history = new LevelHistory(levelState);
+
+    this.gameOver = false;
+    this.gameOverMessage = "";
+    this.snakeTimer = 2;
   }
 
   get state() {
@@ -13,6 +17,8 @@ class LevelManager {
   }
 
   handleInput(keyCode) {
+    if (this.gameOver) return false;
+
     switch (keyCode) {
       case "ArrowUp":
       case "KeyW":
@@ -59,6 +65,64 @@ class LevelManager {
     }
   }
 
+  snakeHeadMoveCheck() {
+    const snakeHead = this.state.snek[0];
+    // can move forward?
+    let ok = this.getMoveCollide(
+      snakeHead.x,
+      snakeHead.y,
+      getDirVec(snakeHead.direction),
+      {
+        person: true,
+        crate: true,
+      }
+    );
+    if (!ok) return true;
+    // snake turn right
+    snakeHead.direction = rotCw(snakeHead.direction);
+    ok = this.getMoveCollide(
+      snakeHead.x,
+      snakeHead.y,
+      getDirVec(snakeHead.direction),
+      {
+        person: true,
+        crate: true,
+      }
+    );
+    if (!ok) return true;
+    // snake turn left
+    snakeHead.direction = oppositeDirection(snakeHead.direction);
+    ok = this.getMoveCollide(
+      snakeHead.x,
+      snakeHead.y,
+      getDirVec(snakeHead.direction),
+      {
+        person: true,
+        crate: true,
+      }
+    );
+    if (!ok) return true;
+    // snake ded
+    return false;
+  }
+
+  gameTick() {
+    if (!this.snakeHeadMoveCheck()) {
+      this.gameOver = true;
+      this.gameOverMessage = "SNAKE'S DEAD";
+      return;
+    }
+
+    this.state.snek[0].head = false;
+    const newHead = this.state.snek[0].clone();
+    newHead.head = true;
+    this.tryMove(newHead, getDirVec(newHead.direction));
+
+    this.state.snek.splice(0, 0, newHead);
+
+    this.state.snek.pop();
+  }
+
   renderGame() {
     const { width, height } = this.game;
 
@@ -69,6 +133,8 @@ class LevelManager {
     const levelOffsetY = (height - this.state.rows * SQUARE_SIZE) / 2;
 
     const pos = new Position(levelOffsetX, levelOffsetY);
+
+    this.gameTick();
 
     this.state.snek.forEach((seg, idx, arr) => {
       this.game.ctx.save();
@@ -161,9 +227,21 @@ class LevelManager {
         }
       );
     });
+
+    if (this.gameOver) {
+      this.game.drawText(this.gameOverMessage, width / 2, height / 2, {
+        color: "#FFFFFF",
+        fontSize: 32,
+      });
+    }
   }
 
-  verifyMoveBounds(srcX, srcY, moveX, moveY) {
+  getMoveCollide(
+    srcX,
+    srcY,
+    { x: moveX, y: moveY },
+    collides = { crate: false, snake: false, person: false }
+  ) {
     const newX = srcX + moveX;
     const newY = srcY + moveY;
     if (
@@ -172,18 +250,32 @@ class LevelManager {
       newY < 0 ||
       newY >= this.state.rows
     ) {
-      return false;
+      return "out";
     }
+    if (this.state.blocks.some((block) => block.x === newX && block.y === newY))
+      return "block";
     if (
-      this.state.blocks.some((block) => block.x === newX && block.y === newY)
-    ) {
-      return false;
-    }
-    return true;
+      collides.crate &&
+      this.state.crates.some((crate) => crate.x === newX && crate.y === newY)
+    )
+      return "crate";
+    if (
+      collides.person &&
+      this.state.player.x == newX &&
+      this.state.player.y == newY
+    )
+      return "person";
+    if (
+      collides.snake &&
+      this.state.snek.some((snek) => snek.x === newX && snek.y === newY)
+    )
+      return "snek";
+    return false;
   }
 
-  tryMove(src, moveX, moveY) {
-    if (!this.verifyMoveBounds(src.x, src.y, moveX, moveY)) return false;
+  tryMove(src, dirVec) {
+    const { x: moveX, y: moveY } = dirVec;
+    if (this.getMoveCollide(src.x, src.y, dirVec)) return false;
     src.x += moveX;
     src.y += moveY;
     return true;
@@ -191,9 +283,9 @@ class LevelManager {
 
   makeMove(direction) {
     if (this.levelIsDone) return;
-    const dirVec = getDirVec(direction);
     const originalPlayer = this.state.player.clone();
-    const ok = this.tryMove(this.state.player, dirVec.x, dirVec.y);
+    const dirVec = getDirVec(direction);
+    const ok = this.tryMove(this.state.player, dirVec);
     if (!ok) return false;
 
     const crate = this.state.crates.find(
