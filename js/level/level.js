@@ -145,6 +145,22 @@ class LevelManager {
         }
       );
     });
+
+    this.state.apples.forEach((apple) => {
+      this.game.drawImage(
+        ASSETS.SPRITE.APPLE.sheet,
+        pos.x + apple.x * SQUARE_SIZE,
+        pos.y + apple.y * SQUARE_SIZE,
+        SQUARE_SIZE,
+        SQUARE_SIZE,
+        {
+          x: ASSETS.SPRITE.APPLE.x,
+          y: ASSETS.SPRITE.APPLE.y,
+          width: ASSETS.SPRITE.APPLE.width,
+          height: ASSETS.SPRITE.APPLE.height,
+        }
+      );
+    });
   }
 
   verifyMoveBounds(srcX, srcY, moveX, moveY) {

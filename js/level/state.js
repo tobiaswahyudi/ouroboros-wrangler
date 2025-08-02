@@ -17,6 +17,7 @@ class LevelState {
     this.snek = [];
     this.crates = [];
     this.blocks = [];
+    this.apples = [];
     this.id = "";
     this.bestMoves = 0;
     this.rows = 0;
@@ -43,6 +44,7 @@ class LevelState {
     state.snek = this.snek.map((snek) => snek.clone());
     state.crates = this.crates.map((crate) => crate.clone());
     state.blocks = this.blocks.map((block) => block.clone());
+    state.apples = this.apples.map((apple) => apple.clone());
     state.rows = this.rows;
     state.cols = this.cols;
     state.turnCount = this.turnCount;
@@ -95,6 +97,9 @@ class LevelState {
             break;
           case "Y":
             this.player = new Position(x, y);
+            break;
+          case "A":
+            this.apples.push(new Position(x, y));
             break;
         }
       }
