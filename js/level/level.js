@@ -1,14 +1,12 @@
 const MOVE_ANIM_DUR = 4;
 
-const SQUARE_SIZE = 64;
+const SQUARE_SIZE = 48;
 
 class LevelManager {
   constructor(game, levelState) {
     this.game = game;
     this.history = new LevelHistory(levelState);
 
-    this.gameOver = false;
-    this.gameOverMessage = "";
     this.snakeTimer = 2;
   }
 
@@ -17,7 +15,16 @@ class LevelManager {
   }
 
   handleInput(keyCode) {
-    if (this.gameOver) return false;
+    switch (keyCode) {
+      case "KeyZ":
+        this.history.pop();
+        return true;
+      case "KeyR":
+        this.restartLevel();
+        return true;
+    }
+
+    if (this.state.gameOver) return false;
 
     switch (keyCode) {
       case "ArrowUp":
@@ -49,12 +56,6 @@ class LevelManager {
         if (!this.makeMove(Direction.SLEEP)) this.history.pop();
         return true;
         break;
-      case "KeyR":
-        this.restartLevel();
-        return true;
-      case "KeyZ":
-        this.history.pop();
-        return true;
       case "Escape":
         this.returnToZone(false);
         return true;
@@ -73,7 +74,6 @@ class LevelManager {
       snakeHead.y,
       getDirVec(snakeHead.direction),
       {
-        person: true,
         crate: true,
       }
     );
@@ -85,7 +85,6 @@ class LevelManager {
       snakeHead.y,
       getDirVec(snakeHead.direction),
       {
-        person: true,
         crate: true,
       }
     );
@@ -97,7 +96,6 @@ class LevelManager {
       snakeHead.y,
       getDirVec(snakeHead.direction),
       {
-        person: true,
         crate: true,
       }
     );
@@ -108,8 +106,8 @@ class LevelManager {
 
   gameTick() {
     if (!this.snakeHeadMoveCheck()) {
-      this.gameOver = true;
-      this.gameOverMessage = "SNAKE'S DEAD";
+      this.state.gameOver = true;
+      this.state.gameOverMessage = "SNAKE'S DEAD";
       return;
     }
 
@@ -121,6 +119,12 @@ class LevelManager {
     this.state.snek.splice(0, 0, newHead);
 
     this.state.snek.pop();
+
+    if(newHead.x == this.state.player.x && newHead.y == this.state.player.y) {
+      this.state.gameOver = true;
+      this.state.gameOverMessage = "YA GOT EATEN";
+      return;
+    }
   }
 
   renderGame() {
@@ -134,7 +138,19 @@ class LevelManager {
 
     const pos = new Position(levelOffsetX, levelOffsetY);
 
-    this.gameTick();
+    this.game.drawImage(
+      ASSETS.SPRITE.PLAYER.sheet,
+      pos.x + this.state.player.x * SQUARE_SIZE,
+      pos.y + this.state.player.y * SQUARE_SIZE,
+      SQUARE_SIZE,
+      SQUARE_SIZE,
+      {
+        x: ASSETS.SPRITE.PLAYER.x,
+        y: ASSETS.SPRITE.PLAYER.y,
+        width: ASSETS.SPRITE.PLAYER.width,
+        height: ASSETS.SPRITE.PLAYER.height,
+      }
+    );
 
     this.state.snek.forEach((seg, idx, arr) => {
       this.game.ctx.save();
@@ -150,11 +166,11 @@ class LevelManager {
         bodyPart = ASSETS.SPRITE.SNEK.curve;
       }
 
-      if(bodyPart == ASSETS.SPRITE.SNEK.curve) {
+      if (bodyPart == ASSETS.SPRITE.SNEK.curve) {
         const prevDir = arr[idx + 1].direction;
         const nowDir = seg.direction;
 
-        if(rotCcw(prevDir) == nowDir) {
+        if (rotCcw(prevDir) == nowDir) {
           this.game.ctx.rotate(rotationFromRight(prevDir) * Math.PI);
         } else {
           this.game.ctx.rotate((rotationFromRight(prevDir) + 1) * Math.PI);
@@ -179,20 +195,6 @@ class LevelManager {
       );
       this.game.ctx.restore();
     });
-
-    this.game.drawImage(
-      ASSETS.SPRITE.PLAYER.sheet,
-      pos.x + this.state.player.x * SQUARE_SIZE,
-      pos.y + this.state.player.y * SQUARE_SIZE,
-      SQUARE_SIZE,
-      SQUARE_SIZE,
-      {
-        x: ASSETS.SPRITE.PLAYER.x,
-        y: ASSETS.SPRITE.PLAYER.y,
-        width: ASSETS.SPRITE.PLAYER.width,
-        height: ASSETS.SPRITE.PLAYER.height,
-      }
-    );
 
     this.state.crates.forEach((crate) => {
       this.game.drawImage(
@@ -242,8 +244,8 @@ class LevelManager {
       );
     });
 
-    if (this.gameOver) {
-      this.game.drawText(this.gameOverMessage, width / 2, height / 2, {
+    if (this.state.gameOver) {
+      this.game.drawText(this.state.gameOverMessage, width / 2, height / 2, {
         color: "#FFFFFF",
         fontSize: 32,
       });
@@ -254,7 +256,7 @@ class LevelManager {
     srcX,
     srcY,
     { x: moveX, y: moveY },
-    collides = { crate: false, snake: false, person: false }
+    collides = { crate: false, snake: false, apple: false }
   ) {
     const newX = srcX + moveX;
     const newY = srcY + moveY;
@@ -274,22 +276,21 @@ class LevelManager {
     )
       return "crate";
     if (
-      collides.person &&
-      this.state.player.x == newX &&
-      this.state.player.y == newY
-    )
-      return "person";
-    if (
       collides.snake &&
       this.state.snek.some((snek) => snek.x === newX && snek.y === newY)
     )
       return "snek";
+    if (
+        collides.apple &&
+        this.state.apples.some((apple) => apple.x === newX && apple.y === newY)
+      )
+        return "snek";
     return false;
   }
 
-  tryMove(src, dirVec) {
+  tryMove(src, dirVec, checks) {
     const { x: moveX, y: moveY } = dirVec;
-    if (this.getMoveCollide(src.x, src.y, dirVec)) return false;
+    if (this.getMoveCollide(src.x, src.y, dirVec, checks)) return false;
     src.x += moveX;
     src.y += moveY;
     return true;
@@ -299,7 +300,7 @@ class LevelManager {
     if (this.levelIsDone) return;
     const originalPlayer = this.state.player.clone();
     const dirVec = getDirVec(direction);
-    const ok = this.tryMove(this.state.player, dirVec);
+    const ok = this.tryMove(this.state.player, dirVec, { snake: true });
     if (!ok) return false;
 
     const crate = this.state.crates.find(
@@ -307,13 +308,14 @@ class LevelManager {
         crate.x === this.state.player.x && crate.y === this.state.player.y
     );
     if (crate) {
-      const ok = this.tryMove(crate, dirVec.x, dirVec.y);
+      const ok = this.tryMove(crate, dirVec, { snake: true });
       if (!ok) {
         this.state.player = originalPlayer;
         return false;
       }
     }
 
+    this.gameTick();
     this.checkLevelStatus();
     return true;
   }

@@ -22,6 +22,8 @@ class LevelState {
     this.bestMoves = 0;
     this.rows = 0;
     this.cols = 0;
+    this.gameOver = false;
+    this.gameOverMessage = "";
   }
 
   static make({ id = "", title = "", level, bestMoves = 0 }) {
