@@ -125,7 +125,7 @@ class LevelManager {
 
       if(newHead.x == this.state.player.x && newHead.y == this.state.player.y) {
         this.state.gameOver = true;
-        this.state.gameOverMessage = "YA GOT EATEN";
+        this.state.gameOverMessage = "YA GOT EATEN, YA DINGUS";
         return;
       }
     }
@@ -255,15 +255,22 @@ class LevelManager {
     });
 
     if (this.state.gameOver) {
-      this.game.drawText(this.state.gameOverMessage, width / 2, height / 2, {
+      this.game.drawText(this.state.gameOverMessage, width / 2, height / 2 - 30, {
         color: "#FFFFFF",
-        fontSize: 32,
+        font: '64px Tiny5',
+        align: 'center'
+      });
+
+      this.game.drawText("Press Z to undo or R to restart", width / 2, height / 2 + 30, {
+        color: "#FFFFFF",
+        font: '24px Tiny5',
+        align: 'center'
       });
     }
 
-    this.game.drawText(`SNAKE MOVES IN ${SNAKE_TIMER - this.state.snakeTimer}`, 10, 10, {
+    this.game.drawText(`SNAKE MOVES IN ${SNAKE_TIMER - this.state.snakeTimer}`, 20, 20, {
       color: "#FFFFFF",
-      fontSize: 32,
+      font: '24px Tiny5',
     });
   }
 
