@@ -176,8 +176,21 @@ class LevelManager {
   makeMove(direction) {
     if (this.levelIsDone) return;
     const dirVec = getDirVec(direction);
+    const originalPlayer = this.state.player.clone();
     const ok = this.tryMove(this.state.player, dirVec.x, dirVec.y);
     if (!ok) return false;
+
+    const crate = this.state.crates.find(
+      (crate) =>
+        crate.x === this.state.player.x && crate.y === this.state.player.y
+    );
+    if (crate) {
+      const ok = this.tryMove(crate, dirVec.x, dirVec.y);
+      if (!ok) {
+        this.state.player = originalPlayer;
+        return false;
+      }
+    }
 
     this.checkLevelStatus();
     return true;
