@@ -1,13 +1,13 @@
 const MOVE_ANIM_DUR = 4;
 
 const SQUARE_SIZE = 48;
+const SNAKE_TIMER = 3;
+const DEST_HUE = -140;
 
 class LevelManager {
   constructor(game, levelState) {
     this.game = game;
     this.history = new LevelHistory(levelState);
-
-    this.snakeTimer = 2;
   }
 
   get state() {
@@ -105,25 +105,29 @@ class LevelManager {
   }
 
   gameTick() {
-    if (!this.snakeHeadMoveCheck()) {
-      this.state.gameOver = true;
-      this.state.gameOverMessage = "SNAKE'S DEAD";
-      return;
-    }
+    this.state.snakeTimer = (this.state.snakeTimer + 1) % SNAKE_TIMER;
+    if(this.state.snakeTimer == 0) {
+      // SNAKE MOVES
+      if (!this.snakeHeadMoveCheck()) {
+        this.state.gameOver = true;
+        this.state.gameOverMessage = "SNAKE'S DEAD";
+        return;
+      }
 
-    this.state.snek[0].head = false;
-    const newHead = this.state.snek[0].clone();
-    newHead.head = true;
-    this.tryMove(newHead, getDirVec(newHead.direction));
+      this.state.snek[0].head = false;
+      const newHead = this.state.snek[0].clone();
+      newHead.head = true;
+      this.tryMove(newHead, getDirVec(newHead.direction));
 
-    this.state.snek.splice(0, 0, newHead);
+      this.state.snek.splice(0, 0, newHead);
 
-    this.state.snek.pop();
+      this.state.snek.pop();
 
-    if(newHead.x == this.state.player.x && newHead.y == this.state.player.y) {
-      this.state.gameOver = true;
-      this.state.gameOverMessage = "YA GOT EATEN";
-      return;
+      if(newHead.x == this.state.player.x && newHead.y == this.state.player.y) {
+        this.state.gameOver = true;
+        this.state.gameOverMessage = "YA GOT EATEN";
+        return;
+      }
     }
   }
 
@@ -151,6 +155,8 @@ class LevelManager {
         height: ASSETS.SPRITE.PLAYER.height,
       }
     );
+
+    this.game.ctx.save();
 
     this.state.snek.forEach((seg, idx, arr) => {
       this.game.ctx.save();
@@ -180,6 +186,8 @@ class LevelManager {
         this.game.ctx.rotate(rotationFromRight(seg.direction) * Math.PI);
       }
 
+      this.game.ctx.filter = `hue-rotate(${DEST_HUE * (this.state.snakeTimer / SNAKE_TIMER)}deg)`;
+
       this.game.drawImage(
         bodyPart.sheet,
         -SQUARE_SIZE / 2,
@@ -195,6 +203,8 @@ class LevelManager {
       );
       this.game.ctx.restore();
     });
+
+    this.game.ctx.filter = undefined;
 
     this.state.crates.forEach((crate) => {
       this.game.drawImage(
@@ -250,6 +260,11 @@ class LevelManager {
         fontSize: 32,
       });
     }
+
+    this.game.drawText(`SNAKE MOVES IN ${SNAKE_TIMER - this.state.snakeTimer}`, 10, 10, {
+      color: "#FFFFFF",
+      fontSize: 32,
+    });
   }
 
   getMoveCollide(

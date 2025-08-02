@@ -22,8 +22,11 @@ class LevelState {
     this.bestMoves = 0;
     this.rows = 0;
     this.cols = 0;
+
     this.gameOver = false;
     this.gameOverMessage = "";
+
+    this.snakeTimer = 0;
   }
 
   static make({ id = "", title = "", level, bestMoves = 0 }) {
@@ -50,6 +53,7 @@ class LevelState {
     state.rows = this.rows;
     state.cols = this.cols;
     state.turnCount = this.turnCount;
+    state.snakeTimer = this.snakeTimer;
     return state;
   }
 
