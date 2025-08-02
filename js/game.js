@@ -25,7 +25,7 @@ class Game {
     };
 
     // Initialize modules
-    this.levelManager = null;
+    this.levelManager = new LevelManager(this, level_idktesting);
 
     this.assetsPreloaded = false;
     this.loadedImages = new Map();
