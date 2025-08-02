@@ -120,14 +120,16 @@ class LevelManager {
       this.tryMove(newHead, getDirVec(newHead.direction));
 
       this.state.snek.splice(0, 0, newHead);
-
+      
       this.state.snek.pop();
-
+      this.state.apples = this.state.apples.filter(apple => apple.x != newHead.x || apple.y != newHead.y)
+      
       if(newHead.x == this.state.player.x && newHead.y == this.state.player.y) {
         this.state.gameOver = true;
         this.state.gameOverMessage = "YA GOT EATEN, YA DINGUS";
         return;
       }
+
     }
   }
 
@@ -278,7 +280,7 @@ class LevelManager {
     srcX,
     srcY,
     { x: moveX, y: moveY },
-    collides = { crate: false, snake: false, apple: false }
+    collides = { crate: false, snake: false }
   ) {
     const newX = srcX + moveX;
     const newY = srcY + moveY;
@@ -302,11 +304,6 @@ class LevelManager {
       this.state.snek.some((snek) => snek.x === newX && snek.y === newY)
     )
       return "snek";
-    if (
-        collides.apple &&
-        this.state.apples.some((apple) => apple.x === newX && apple.y === newY)
-      )
-        return "snek";
     return false;
   }
 
