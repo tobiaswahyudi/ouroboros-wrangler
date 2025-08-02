@@ -4,7 +4,7 @@ const level_idktesting = LevelState.make({
     level: `
 Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl
 Bl|..|Bl|Bl|..|..|..|..|..|Bl
-Bl|..|Bl|..|..|..|Hl|Sl|..|Bl
+Bl|..|Bl|..|..|Hl|Sl|Sl|..|Bl
 Bl|..|Yu|..|..|..|..|Su|..|Bl
 Bl|..|..|..|Cr|..|..|Su|..|Bl
 Bl|..|Bl|..|..|Ap|..|Su|..|Bl
