@@ -13,3 +13,5 @@ const level_idktesting = LevelState.make({
 });
 
 const LEVELS = [level_idktesting];
+
+const CURRENT_LEVEL = level_idktesting;
