@@ -57,6 +57,20 @@ class Position {
   }
 }
 
+const rotationFromRight = (direction) => {
+  switch (direction) {
+    case Direction.UP:
+      return 1.5;
+    case Direction.RIGHT:
+      return 0;
+    case Direction.DOWN:
+      return 0.5;
+    case Direction.LEFT:
+      return 1;
+  }
+  return 0;
+};
+
 const oppositeDirection = (direction) => {
   switch (direction) {
     case Direction.UP:

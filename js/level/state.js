@@ -4,6 +4,10 @@ class SnakeSegment extends Position {
     this.direction = direction;
     this.head = head;
   }
+
+  clone() {
+    return new SnakeSegment(this.x, this.y, this.direction, this.head);
+  }
 }
 
 class LevelState {

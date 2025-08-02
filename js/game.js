@@ -159,7 +159,9 @@ class Game {
   // Preload multiple images
   async preloadImages() {
     try {
-      await Promise.all(ALL_ASSETS.map((path) => this.loadImage(path)));
+      await Promise.all(
+        _flatten(SPRITESHEETS).map((path) => this.loadImage(path))
+      );
       console.log("All images preloaded");
     } catch (error) {
       console.error("Error preloading images:", error);
