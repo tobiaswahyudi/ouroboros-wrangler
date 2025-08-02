@@ -7,6 +7,7 @@ class Game {
 
     // Game state
     this.isRunning = false;
+    this.requestedRedraw = null;
 
     // Canvas dimensions
     this.width = 800;
@@ -90,8 +91,8 @@ class Game {
 
   requestRedraw() {
     if (this.isRunning) {
-      if (requestedRedraw) clearTimeout(requestedRedraw);
-      requestedRedraw = setTimeout(() => {
+      if (this.requestedRedraw) clearTimeout(this.requestedRedraw);
+      this.requestedRedraw = setTimeout(() => {
         this.render();
       }, MS_PER_FRAME);
     }
