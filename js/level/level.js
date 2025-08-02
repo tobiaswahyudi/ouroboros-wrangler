@@ -142,13 +142,27 @@ class LevelManager {
         pos.x + (seg.x + 0.5) * SQUARE_SIZE,
         pos.y + (seg.y + 0.5) * SQUARE_SIZE
       );
-      this.game.ctx.rotate(rotationFromRight(seg.direction) * Math.PI);
 
       let bodyPart = ASSETS.SPRITE.SNEK.body;
       if (seg.head) bodyPart = ASSETS.SPRITE.SNEK.head;
       else if (idx === arr.length - 1) bodyPart = ASSETS.SPRITE.SNEK.tail;
-      else if (seg.direction !== arr[idx + 1].direction)
+      else if (seg.direction !== arr[idx + 1].direction) {
         bodyPart = ASSETS.SPRITE.SNEK.curve;
+      }
+
+      if(bodyPart == ASSETS.SPRITE.SNEK.curve) {
+        const prevDir = arr[idx + 1].direction;
+        const nowDir = seg.direction;
+
+        if(rotCcw(prevDir) == nowDir) {
+          this.game.ctx.rotate(rotationFromRight(prevDir) * Math.PI);
+        } else {
+          this.game.ctx.rotate((rotationFromRight(prevDir) + 1) * Math.PI);
+          this.game.ctx.scale(-1, 1);
+        }
+      } else {
+        this.game.ctx.rotate(rotationFromRight(seg.direction) * Math.PI);
+      }
 
       this.game.drawImage(
         bodyPart.sheet,
