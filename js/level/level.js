@@ -8,6 +8,7 @@ class LevelManager {
   constructor(game, levelState) {
     this.game = game;
     this.history = new LevelHistory(levelState);
+    this.frameCount = 0;
   }
 
   get state() {
@@ -106,7 +107,7 @@ class LevelManager {
 
   gameTick() {
     this.state.snakeTimer = (this.state.snakeTimer + 1) % SNAKE_TIMER;
-    if(this.state.snakeTimer == 0) {
+    if (this.state.snakeTimer == 0) {
       // SNAKE MOVES
       if (!this.snakeHeadMoveCheck()) {
         this.state.gameOver = true;
@@ -120,21 +121,34 @@ class LevelManager {
       this.tryMove(newHead, getDirVec(newHead.direction));
 
       this.state.snek.splice(0, 0, newHead);
-      
-      this.state.snek.pop();
-      this.state.apples = this.state.apples.filter(apple => apple.x != newHead.x || apple.y != newHead.y)
-      
-      if(newHead.x == this.state.player.x && newHead.y == this.state.player.y) {
+
+      const eatApple = this.state.apples.find(
+        (apple) => apple.x == newHead.x && apple.y == newHead.y
+      );
+      if (eatApple) {
+        this.state.apples = this.state.apples.filter(
+          (apple) => apple.x != newHead.x || apple.y != newHead.y
+        );
+      } else {
+        this.state.snek.pop();
+      }
+
+      if (
+        newHead.x == this.state.player.x &&
+        newHead.y == this.state.player.y
+      ) {
         this.state.gameOver = true;
         this.state.gameOverMessage = "YA GOT EATEN, YA DINGUS";
         return;
       }
-
     }
   }
 
   renderGame() {
     const { width, height } = this.game;
+
+    this.frameCount++;
+    let anotherRender = false;
 
     // Game area background
     this.game.drawRect(0, 0, width, height, { fill: "#444444" });
@@ -188,7 +202,9 @@ class LevelManager {
         this.game.ctx.rotate(rotationFromRight(seg.direction) * Math.PI);
       }
 
-      this.game.ctx.filter = `hue-rotate(${DEST_HUE * (this.state.snakeTimer / SNAKE_TIMER)}deg)`;
+      this.game.ctx.filter = `hue-rotate(${
+        DEST_HUE * (this.state.snakeTimer / SNAKE_TIMER)
+      }deg)`;
 
       this.game.drawImage(
         bodyPart.sheet,
@@ -257,23 +273,56 @@ class LevelManager {
     });
 
     if (this.state.gameOver) {
-      this.game.drawText(this.state.gameOverMessage, width / 2, height / 2 - 30, {
-        color: "#FFFFFF",
-        font: '64px Tiny5',
-        align: 'center'
-      });
+      this.game.drawText(
+        this.state.gameOverMessage,
+        width / 2,
+        height / 2 - 30,
+        {
+          color: "#FFFFFF",
+          font: "64px Tiny5",
+          align: "center",
+        }
+      );
 
-      this.game.drawText("Press Z to undo or R to restart", width / 2, height / 2 + 30, {
-        color: "#FFFFFF",
-        font: '24px Tiny5',
-        align: 'center'
-      });
+      this.game.drawText(
+        "Press Z to undo or R to restart",
+        width / 2,
+        height / 2 + 30,
+        {
+          color: "#FFFFFF",
+          font: "24px Tiny5",
+          align: "center",
+        }
+      );
     }
 
-    this.game.drawText(`SNAKE MOVES IN ${SNAKE_TIMER - this.state.snakeTimer}`, 20, 20, {
-      color: "#FFFFFF",
-      font: '24px Tiny5',
-    });
+    this.game.drawText(
+      `SNAKE MOVES IN ${SNAKE_TIMER - this.state.snakeTimer}`,
+      20,
+      20,
+      {
+        color: "#FFFFFF",
+        font: "24px Tiny5",
+      }
+    );
+
+    if (this.state.apples.length == 0) {
+      this.game.drawText("all apples eaten", width / 2, 30, {
+        color: "#FFFFFF",
+        font: "24px Tiny5",
+        align: "center",
+      });
+      if (this.frameCount % 30 < 15) {
+        this.game.drawText("IT'S OUROBOROS TIME", width / 2, 54, {
+          color: `hsl(${Math.floor(this.frameCount / 30) * 30}, 100%, 50%)`,
+          font: "32px Tiny5",
+          align: "center",
+        });
+      }
+      anotherRender = true;
+    }
+
+    return anotherRender;
   }
 
   getMoveCollide(
