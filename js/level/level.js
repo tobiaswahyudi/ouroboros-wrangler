@@ -154,10 +154,18 @@ class LevelManager {
         this.state.snek.push(snakeTail);
       }
 
-      if (
-        newHead.x == this.state.player.x &&
-        newHead.y == this.state.player.y
-      ) {
+      if (newHead.equals(this.state.player)) {
+        this.state.gameOver = true;
+        this.state.gameOverMessage = "YA GOT EATEN, YA DINGUS";
+        return;
+      }
+
+      if(newHead.equals(snakeNewTail)) {
+        this.state.gameOver = true;
+        this.state.gameOverMessage = "OUROBOROS";
+      }
+
+      if (this.state.ouroborosMode && newHead.equals()) {
         this.state.gameOver = true;
         this.state.gameOverMessage = "YA GOT EATEN, YA DINGUS";
         return;
@@ -314,50 +322,50 @@ class LevelManager {
 
   renderSnakeBody(seg, idx, arr) {
     this.game.ctx.save();
-      this.game.ctx.translate(
-        this.pos.x + (seg.x + 0.5) * SQUARE_SIZE,
-        this.pos.y + (seg.y + 0.5) * SQUARE_SIZE
-      );
+    this.game.ctx.translate(
+      this.pos.x + (seg.x + 0.5) * SQUARE_SIZE,
+      this.pos.y + (seg.y + 0.5) * SQUARE_SIZE
+    );
 
-      let bodyPart = ASSETS.SPRITE.SNEK.body;
-      if (seg.head) bodyPart = ASSETS.SPRITE.SNEK.head;
-      else if (idx === arr.length - 1) bodyPart = ASSETS.SPRITE.SNEK.tail;
-      else if (seg.direction !== arr[idx + 1].direction) {
-        bodyPart = ASSETS.SPRITE.SNEK.curve;
-      }
+    let bodyPart = ASSETS.SPRITE.SNEK.body;
+    if (seg.head) bodyPart = ASSETS.SPRITE.SNEK.head;
+    else if (idx === arr.length - 1) bodyPart = ASSETS.SPRITE.SNEK.tail;
+    else if (seg.direction !== arr[idx + 1].direction) {
+      bodyPart = ASSETS.SPRITE.SNEK.curve;
+    }
 
-      if (bodyPart == ASSETS.SPRITE.SNEK.curve) {
-        const prevDir = arr[idx + 1].direction;
-        const nowDir = seg.direction;
+    if (bodyPart == ASSETS.SPRITE.SNEK.curve) {
+      const prevDir = arr[idx + 1].direction;
+      const nowDir = seg.direction;
 
-        if (rotCcw(prevDir) == nowDir) {
-          this.game.ctx.rotate(rotationFromRight(prevDir) * Math.PI);
-        } else {
-          this.game.ctx.rotate((rotationFromRight(prevDir) + 1) * Math.PI);
-          this.game.ctx.scale(-1, 1);
-        }
+      if (rotCcw(prevDir) == nowDir) {
+        this.game.ctx.rotate(rotationFromRight(prevDir) * Math.PI);
       } else {
-        this.game.ctx.rotate(rotationFromRight(seg.direction) * Math.PI);
+        this.game.ctx.rotate((rotationFromRight(prevDir) + 1) * Math.PI);
+        this.game.ctx.scale(-1, 1);
       }
+    } else {
+      this.game.ctx.rotate(rotationFromRight(seg.direction) * Math.PI);
+    }
 
-      this.game.ctx.filter = `hue-rotate(${
-        DEST_HUE * (this.state.snakeTimer / SNAKE_TIMER)
-      }deg)`;
+    this.game.ctx.filter = `hue-rotate(${
+      DEST_HUE * (this.state.snakeTimer / SNAKE_TIMER)
+    }deg)`;
 
-      this.game.drawImage(
-        bodyPart.sheet,
-        -SQUARE_SIZE / 2,
-        -SQUARE_SIZE / 2,
-        SQUARE_SIZE,
-        SQUARE_SIZE,
-        {
-          x: bodyPart.x,
-          y: bodyPart.y,
-          width: bodyPart.width,
-          height: bodyPart.height,
-        }
-      );
-      this.game.ctx.restore();
+    this.game.drawImage(
+      bodyPart.sheet,
+      -SQUARE_SIZE / 2,
+      -SQUARE_SIZE / 2,
+      SQUARE_SIZE,
+      SQUARE_SIZE,
+      {
+        x: bodyPart.x,
+        y: bodyPart.y,
+        width: bodyPart.width,
+        height: bodyPart.height,
+      }
+    );
+    this.game.ctx.restore();
   }
 
   getMoveCollide(
