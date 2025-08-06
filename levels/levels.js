@@ -6,7 +6,7 @@ Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl
 Bl|..|Bl|Bl|..|..|..|..|..|Bl
 Bl|..|Bl|..|..|Hl|Sl|Sl|..|Bl
 Bl|..|Yu|..|..|..|..|Su|..|Bl
-Bl|..|..|..|Cr|..|..|Su|..|Bl
+Bl|..|..|..|Cr|..|..|Su|Ap|Bl
 Bl|..|Bl|..|..|Ap|..|Su|..|Bl
 Bl|..|..|..|..|..|..|Su|..|Bl
 Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl|Bl

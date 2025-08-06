@@ -14,6 +14,10 @@ class Position {
     this.y = y;
   }
 
+  equals(other) {
+    return this.x === other.x && this.y === other.y;
+  }
+
   toString() {
     return strPosition(this.x, this.y);
   }

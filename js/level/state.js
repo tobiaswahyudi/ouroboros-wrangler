@@ -124,4 +124,8 @@ class LevelState {
       }
     }
   }
+
+  get ouroborosMode() {
+    return this.apples.length == 0;
+  }
 }

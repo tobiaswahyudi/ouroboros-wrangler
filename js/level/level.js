@@ -9,6 +9,15 @@ class LevelManager {
     this.game = game;
     this.history = new LevelHistory(levelState);
     this.frameCount = 0;
+    this.animations = [];
+
+    this.yelling = false;
+
+    const { width, height } = this.game;
+    const levelOffsetX = (width - levelState.cols * SQUARE_SIZE) / 2;
+    const levelOffsetY = (height - levelState.rows * SQUARE_SIZE) / 2;
+
+    this.pos = new Position(levelOffsetX, levelOffsetY);
   }
 
   get state() {
@@ -16,6 +25,8 @@ class LevelManager {
   }
 
   handleInput(keyCode) {
+    if (this.yelling) return false;
+
     switch (keyCode) {
       case "KeyZ":
         this.history.pop();
@@ -54,7 +65,7 @@ class LevelManager {
         break;
       case "Space":
         this.history.copyTop();
-        if (!this.makeMove(Direction.SLEEP)) this.history.pop();
+        this.yellAtSnake();
         return true;
         break;
       case "Escape":
@@ -67,7 +78,7 @@ class LevelManager {
     }
   }
 
-  snakeHeadMoveCheck() {
+  snakeHeadMoveCheck(newTail) {
     const snakeHead = this.state.snek[0];
     // can move forward?
     let ok = this.getMoveCollide(
@@ -76,9 +87,10 @@ class LevelManager {
       getDirVec(snakeHead.direction),
       {
         crate: true,
+        snake: true,
       }
     );
-    if (!ok) return true;
+    if (!ok || ok == newTail) return true;
     // snake turn right
     snakeHead.direction = rotCw(snakeHead.direction);
     ok = this.getMoveCollide(
@@ -87,9 +99,10 @@ class LevelManager {
       getDirVec(snakeHead.direction),
       {
         crate: true,
+        snake: true,
       }
     );
-    if (!ok) return true;
+    if (!ok || ok == newTail) return true;
     // snake turn left
     snakeHead.direction = oppositeDirection(snakeHead.direction);
     ok = this.getMoveCollide(
@@ -98,18 +111,27 @@ class LevelManager {
       getDirVec(snakeHead.direction),
       {
         crate: true,
+        snake: true,
       }
     );
-    if (!ok) return true;
+    if (!ok || ok == newTail) return true;
     // snake ded
     return false;
   }
 
   gameTick() {
     this.state.snakeTimer = (this.state.snakeTimer + 1) % SNAKE_TIMER;
+
     if (this.state.snakeTimer == 0) {
+      const snakeTail = this.state.snek.pop();
+
+      const snakeNewTail = this.state.snek.pop();
+      this.state.snek.push(snakeNewTail);
+
+      this.yelling = false;
       // SNAKE MOVES
-      if (!this.snakeHeadMoveCheck()) {
+      const exceptions = this.state.ouroborosMode ? snakeNewTail : undefined;
+      if (!this.snakeHeadMoveCheck(exceptions)) {
         this.state.gameOver = true;
         this.state.gameOverMessage = "SNAKE'S DEAD";
         return;
@@ -129,8 +151,7 @@ class LevelManager {
         this.state.apples = this.state.apples.filter(
           (apple) => apple.x != newHead.x || apple.y != newHead.y
         );
-      } else {
-        this.state.snek.pop();
+        this.state.snek.push(snakeTail);
       }
 
       if (
@@ -153,15 +174,10 @@ class LevelManager {
     // Game area background
     this.game.drawRect(0, 0, width, height, { fill: "#444444" });
 
-    const levelOffsetX = (width - this.state.cols * SQUARE_SIZE) / 2;
-    const levelOffsetY = (height - this.state.rows * SQUARE_SIZE) / 2;
-
-    const pos = new Position(levelOffsetX, levelOffsetY);
-
     this.game.drawImage(
       ASSETS.SPRITE.PLAYER.sheet,
-      pos.x + this.state.player.x * SQUARE_SIZE,
-      pos.y + this.state.player.y * SQUARE_SIZE,
+      this.pos.x + this.state.player.x * SQUARE_SIZE,
+      this.pos.y + this.state.player.y * SQUARE_SIZE,
       SQUARE_SIZE,
       SQUARE_SIZE,
       {
@@ -175,10 +191,132 @@ class LevelManager {
     this.game.ctx.save();
 
     this.state.snek.forEach((seg, idx, arr) => {
-      this.game.ctx.save();
+      this.renderSnakeBody(seg, idx, arr);
+    });
+    // re-draw the head so it stacks over the tail
+    this.renderSnakeBody(this.state.snek[0], 0, this.state.snek);
+
+    this.game.ctx.filter = undefined;
+
+    this.state.crates.forEach((crate) => {
+      this.game.drawImage(
+        ASSETS.SPRITE.CRATE.sheet,
+        this.pos.x + crate.x * SQUARE_SIZE,
+        this.pos.y + crate.y * SQUARE_SIZE,
+        SQUARE_SIZE,
+        SQUARE_SIZE,
+        {
+          x: ASSETS.SPRITE.CRATE.x,
+          y: ASSETS.SPRITE.CRATE.y,
+          width: ASSETS.SPRITE.CRATE.width,
+          height: ASSETS.SPRITE.CRATE.height,
+        }
+      );
+    });
+
+    this.state.blocks.forEach((block) => {
+      this.game.drawImage(
+        ASSETS.SPRITE.BLOCK.sheet,
+        this.pos.x + block.x * SQUARE_SIZE,
+        this.pos.y + block.y * SQUARE_SIZE,
+        SQUARE_SIZE,
+        SQUARE_SIZE,
+        {
+          x: ASSETS.SPRITE.BLOCK.x,
+          y: ASSETS.SPRITE.BLOCK.y,
+          width: ASSETS.SPRITE.BLOCK.width,
+          height: ASSETS.SPRITE.BLOCK.height,
+        }
+      );
+    });
+
+    this.state.apples.forEach((apple) => {
+      this.game.drawImage(
+        ASSETS.SPRITE.APPLE.sheet,
+        this.pos.x + apple.x * SQUARE_SIZE,
+        this.pos.y + apple.y * SQUARE_SIZE,
+        SQUARE_SIZE,
+        SQUARE_SIZE,
+        {
+          x: ASSETS.SPRITE.APPLE.x,
+          y: ASSETS.SPRITE.APPLE.y,
+          width: ASSETS.SPRITE.APPLE.width,
+          height: ASSETS.SPRITE.APPLE.height,
+        }
+      );
+    });
+
+    anotherRender = anotherRender || this.animations.length > 0;
+    this.animations.forEach((anim) => anim.tick(this.game));
+    this.animations = this.animations.filter((anim) => !anim.finished);
+
+    if (this.state.gameOver) {
+      this.game.drawText(
+        this.state.gameOverMessage,
+        width / 2,
+        height / 2 - 30,
+        {
+          color: "#FFFFFF",
+          font: "64px Tiny5",
+          align: "center",
+        }
+      );
+
+      this.game.drawText(
+        "Press Z to undo or R to restart",
+        width / 2,
+        height / 2 + 30,
+        {
+          color: "#FFFFFF",
+          font: "24px Tiny5",
+          align: "center",
+        }
+      );
+    }
+
+    this.game.drawText(
+      `SNAKE MOVES IN ${SNAKE_TIMER - this.state.snakeTimer}`,
+      20,
+      20,
+      {
+        color: "#FFFFFF",
+        font: "24px Tiny5",
+      }
+    );
+
+    if (this.state.ouroborosMode) {
+      this.game.drawText("all apples eaten", width / 2, 30, {
+        color: "#FFFFFF",
+        font: "24px Tiny5",
+        align: "center",
+      });
+      if (this.frameCount % 30 < 15) {
+        this.game.drawText("IT'S OUROBOROS TIME", width / 2, 54, {
+          color: `hsl(${Math.floor(this.frameCount / 30) * 30}, 100%, 50%)`,
+          font: "32px Tiny5",
+          align: "center",
+        });
+      }
+
+      anotherRender = true;
+    }
+
+    if (this.yelling) {
+      // uhh maybe this isnt tbe best but idk whatever man
+      if (this.frameCount % 7 == 0) {
+        this.gameTick();
+      }
+      anotherRender = true;
+    }
+
+    return anotherRender;
+  }
+
+  renderSnakeBody(seg, idx, arr) {
+    this.game.ctx.save();
       this.game.ctx.translate(
-        pos.x + (seg.x + 0.5) * SQUARE_SIZE,
-        pos.y + (seg.y + 0.5) * SQUARE_SIZE
+        this.pos.x + (seg.x + 0.5) * SQUARE_SIZE,
+        this.pos.y + (seg.y + 0.5) * SQUARE_SIZE
       );
 
       let bodyPart = ASSETS.SPRITE.SNEK.body;
@@ -220,109 +358,6 @@ class LevelManager {
         }
       );
       this.game.ctx.restore();
-    });
-
-    this.game.ctx.filter = undefined;
-
-    this.state.crates.forEach((crate) => {
-      this.game.drawImage(
-        ASSETS.SPRITE.CRATE.sheet,
-        pos.x + crate.x * SQUARE_SIZE,
-        pos.y + crate.y * SQUARE_SIZE,
-        SQUARE_SIZE,
-        SQUARE_SIZE,
-        {
-          x: ASSETS.SPRITE.CRATE.x,
-          y: ASSETS.SPRITE.CRATE.y,
-          width: ASSETS.SPRITE.CRATE.width,
-          height: ASSETS.SPRITE.CRATE.height,
-        }
-      );
-    });
-
-    this.state.blocks.forEach((block) => {
-      this.game.drawImage(
-        ASSETS.SPRITE.BLOCK.sheet,
-        pos.x + block.x * SQUARE_SIZE,
-        pos.y + block.y * SQUARE_SIZE,
-        SQUARE_SIZE,
-        SQUARE_SIZE,
-        {
-          x: ASSETS.SPRITE.BLOCK.x,
-          y: ASSETS.SPRITE.BLOCK.y,
-          width: ASSETS.SPRITE.BLOCK.width,
-          height: ASSETS.SPRITE.BLOCK.height,
-        }
-      );
-    });
-
-    this.state.apples.forEach((apple) => {
-      this.game.drawImage(
-        ASSETS.SPRITE.APPLE.sheet,
-        pos.x + apple.x * SQUARE_SIZE,
-        pos.y + apple.y * SQUARE_SIZE,
-        SQUARE_SIZE,
-        SQUARE_SIZE,
-        {
-          x: ASSETS.SPRITE.APPLE.x,
-          y: ASSETS.SPRITE.APPLE.y,
-          width: ASSETS.SPRITE.APPLE.width,
-          height: ASSETS.SPRITE.APPLE.height,
-        }
-      );
-    });
-
-    if (this.state.gameOver) {
-      this.game.drawText(
-        this.state.gameOverMessage,
-        width / 2,
-        height / 2 - 30,
-        {
-          color: "#FFFFFF",
-          font: "64px Tiny5",
-          align: "center",
-        }
-      );
-
-      this.game.drawText(
-        "Press Z to undo or R to restart",
-        width / 2,
-        height / 2 + 30,
-        {
-          color: "#FFFFFF",
-          font: "24px Tiny5",
-          align: "center",
-        }
-      );
-    }
-
-    this.game.drawText(
-      `SNAKE MOVES IN ${SNAKE_TIMER - this.state.snakeTimer}`,
-      20,
-      20,
-      {
-        color: "#FFFFFF",
-        font: "24px Tiny5",
-      }
-    );
-
-    if (this.state.apples.length == 0) {
-      this.game.drawText("all apples eaten", width / 2, 30, {
-        color: "#FFFFFF",
-        font: "24px Tiny5",
-        align: "center",
-      });
-      if (this.frameCount % 30 < 15) {
-        this.game.drawText("IT'S OUROBOROS TIME", width / 2, 54, {
-          color: `hsl(${Math.floor(this.frameCount / 30) * 30}, 100%, 50%)`,
-          font: "32px Tiny5",
-          align: "center",
-        });
-      }
-      anotherRender = true;
-    }
-
-    return anotherRender;
   }
 
   getMoveCollide(
@@ -341,18 +376,18 @@ class LevelManager {
     ) {
       return "out";
     }
-    if (this.state.blocks.some((block) => block.x === newX && block.y === newY))
-      return "block";
-    if (
-      collides.crate &&
-      this.state.crates.some((crate) => crate.x === newX && crate.y === newY)
-    )
-      return "crate";
-    if (
-      collides.snake &&
-      this.state.snek.some((snek) => snek.x === newX && snek.y === newY)
-    )
-      return "snek";
+    const findBlock = this.state.blocks.find(
+      (block) => block.x === newX && block.y === newY
+    );
+    if (findBlock) return findBlock;
+    const findCrate = this.state.crates.find(
+      (crate) => crate.x === newX && crate.y === newY
+    );
+    if (collides.crate && findCrate) return findCrate;
+    const findSnake = this.state.snek.find(
+      (snek) => snek.x === newX && snek.y === newY
+    );
+    if (collides.snake && findSnake) return findSnake;
     return false;
   }
 
@@ -388,8 +423,25 @@ class LevelManager {
     return true;
   }
 
-  checkAimArea(pos) {
-    return this.state.aimArea.lookup.has(pos);
+  yellAtSnake() {
+    this.animations.push(
+      new EtherealAnimation(
+        this.pos.x + (this.state.player.x + 0.5) * SQUARE_SIZE,
+        this.pos.y + (this.state.player.y + 0.5) * SQUARE_SIZE,
+        ASSETS.SPRITE.PLAYER,
+        1.5 * SQUARE_SIZE
+      )
+    );
+    this.yelling = true;
+    const snakeHead = this.state.snek[0];
+    const snakeLeft = rotCcw(snakeHead.direction);
+    const snakeRight = rotCw(snakeHead.direction);
+    if (this.state.player.equals(snakeHead.add(getDirVec(snakeLeft)))) {
+      snakeHead.direction = snakeRight;
+    } else if (this.state.player.equals(snakeHead.add(getDirVec(snakeRight)))) {
+      snakeHead.direction = snakeLeft;
+    }
+    this.makeMove(Direction.SLEEP);
   }
 
   // Check if level is completed, failed, etc.
